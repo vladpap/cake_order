@@ -1,6 +1,5 @@
 from cake_to_order.settings import TG_BOT_TOKEN
-from keyboards import (main_page_keyboard, level_choosing_keyboard,
-                       shape_choosing_keyboard, topping_choosing_keyboard)
+from keyboards import (main_page_keyboard, skip_button)
 from texts import TEXTS
 
 import os
@@ -36,45 +35,134 @@ class FSM(StatesGroup):
     level_choosing_state = State()
     shape_choosing_state = State()
     topping_choosing_state = State()
+    berries_choosing_state = State()
+    decor_choosing_state = State()
+    add_inscription_state = State()
 
 
-tort_pic = FSInputFile('pictures/Tort.png')
-tort_levels = FSInputFile('pictures/Levels.png')
-tort_shape = FSInputFile('pictures/figure.png')
-toppings = FSInputFile('pictures/topping.png')
+cake_pic = FSInputFile('pictures/Tort.png')
+cake_levels = FSInputFile('pictures/Levels.png')
+cake_shape = FSInputFile('pictures/figure.png')
+toppings_photo = FSInputFile('pictures/topping.png')
+berries_photo = FSInputFile('pictures/berries.png')
+decor_photo = FSInputFile('pictures/decor.png')
+
+
+levels = {1: '1 уровень (+400 р.)',
+          2: '2 уровня (+750 р.)',
+          3: '3 уровня (+1 100 р.', }
+shapes = {1: '🟡 Круг (+400 р.)',
+          2: '🟨 Квадрат (+600 р.)',
+          3: '🟨🟨 Прямоугольник (+1 000 р.)', }
+toppings = {1: 'Белый соус (+200 р.)',
+            2: 'Карамельный сироп (+180 р.)',
+            3: 'Кленовый сироп (+200 р.)',
+            4: 'Клубничный сироп (+300 р.)',
+            5: 'Черничный сироп (+350 р.)',
+            6: 'Молочный шоколад (+200 р.)', }
+berries = {1: 'Ежевика (+400 р.)',
+           2: 'Малина (+300 р.)',
+           3: '🫐 Голубика (+450 р.)',
+           4: '🍓 Клубника (+500 р.)', }
+decors = {1: 'Фисташки (+300 р.)',
+          2: 'Безе (+400 р.)',
+          3: 'Фундук (+350 р.)',
+          4: 'Пекан (+300 р.)',
+          5: 'Маршмеллоу (+200 р.)',
+          6: 'Марципан (+280 р.)', }
 
 
 @router.message(CommandStart())
 @router.message(Text(text='Вернуться в начало'))
 async def process_start_command(message: Message, state: FSMContext):
-    await bot.send_photo(chat_id=message.chat.id, photo=tort_pic,
+    await bot.send_photo(chat_id=message.chat.id, photo=cake_pic,
                          caption=TEXTS['greeting'],
                          reply_markup=main_page_keyboard)
-    # await state.set_state(default_state)
 
 
 @router.message(Text(text='Собрать свой авторский торт'))
 async def process_custom_your_cake_button(message: Message, state: FSMContext):
-    await bot.send_photo(chat_id=message.chat.id, photo=tort_levels,
+    kb_builder = InlineKeyboardBuilder()
+    buttons = [InlineKeyboardButton(text=levels[level], callback_data=level) for level in levels]
+    kb_builder.row(*buttons, width=1)
+    await bot.send_photo(chat_id=message.chat.id, photo=cake_levels,
                          caption='Сколько уровней будет?',
-                         reply_markup=level_choosing_keyboard)
+                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
     await state.set_state(FSM.shape_choosing_state)
 
 
-@router.message(StateFilter(FSM.shape_choosing_state))
-async def process_level_choosing(message: Message, state: FSMContext):
-    await bot.send_photo(chat_id=message.chat.id, photo=tort_shape,
+@router.callback_query(StateFilter(FSM.shape_choosing_state))
+async def process_level_choosing(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(level_id=callback.data)
+    kb_builder = InlineKeyboardBuilder()
+    buttons = [InlineKeyboardButton(text=shapes[shape], callback_data=shape) for shape in shapes]
+    kb_builder.row(*buttons, width=1)
+    await bot.send_photo(chat_id=callback.from_user.id, photo=cake_shape,
                          caption='Какой формы будет Ваш торт?',
-                         reply_markup=shape_choosing_keyboard)
+                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
     await state.set_state(FSM.topping_choosing_state)
 
 
-@router.message(StateFilter(FSM.topping_choosing_state))
-async def process_shape_choosing(message: Message, state: FSMContext):
-    await bot.send_photo(chat_id=message.chat.id, photo=toppings,
+@router.callback_query(StateFilter(FSM.topping_choosing_state))
+async def process_shape_choosing(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.update_data(shape_id=callback.data)
+    kb_builder = InlineKeyboardBuilder()
+    buttons = [InlineKeyboardButton(text=toppings[topping], callback_data=topping) for topping in toppings]
+    kb_builder.row(*buttons, width=1)
+    kb_builder.row(skip_button)
+    await bot.send_photo(chat_id=callback.from_user.id, photo=toppings_photo,
                          caption='Выбрать топинг',
-                         reply_markup=topping_choosing_keyboard)
-    await state.set_state(default_state)
+                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+    await state.set_state(FSM.berries_choosing_state)
+
+
+@router.callback_query(StateFilter(FSM.berries_choosing_state))
+async def process_toping_choosing(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.update_data(topping_id=callback.data)
+    kb_builder = InlineKeyboardBuilder()
+    buttons = [InlineKeyboardButton(text=berries[berry], callback_data=berry) for berry in berries]
+    kb_builder.row(*buttons, width=1)
+    kb_builder.row(skip_button)
+    await bot.send_photo(chat_id=callback.from_user.id, photo=berries_photo,
+                         caption='Добавить ягод',
+                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+    await state.set_state(FSM.decor_choosing_state)
+
+
+@router.callback_query(StateFilter(FSM.decor_choosing_state))
+async def process_berry_choosing(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.update_data(berry_id=callback.data)
+    kb_builder = InlineKeyboardBuilder()
+    buttons = [InlineKeyboardButton(text=decors[decor], callback_data=decor) for decor in decors]
+    kb_builder.row(*buttons, width=1)
+    kb_builder.row(skip_button)
+    await bot.send_photo(chat_id=callback.from_user.id, photo=decor_photo,
+                         caption='Выбрать декор',
+                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+    await state.set_state(FSM.add_inscription_state)
+
+
+@router.callback_query(StateFilter(FSM.add_inscription_state))
+async def process_decor_choosing(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.update_data(decor_id=callback.data)
+    kb_builder = InlineKeyboardBuilder()
+    buttons = [InlineKeyboardButton(text=decors[decor], callback_data=decor) for decor in decors]
+    kb_builder.row(*buttons, width=1)
+    kb_builder.row(skip_button)
+    await bot.send_photo(chat_id=callback.from_user.id, photo=berries_photo,
+                         caption='Мы можем разместить на торте любую надпись\nОтправьте сообщение с надписью',
+                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+    # await state.set_state(FSM.add_inscription_state)
+
+
+# cake = await state.get_data()
+# print(cake)
+# await state.clear()
+# await state.set_state(default_state)
 
 
 # # ветка спикера
