@@ -82,6 +82,16 @@ class Topping(models.Model):
         return f'{self.title}, {self.price} р.'
 
 
+    def get_topping():
+        base = Topping.objects.all()
+        toppings = {}
+        for record in base:
+            toppings[record.id] = f'{record.title} (+ {record.price} р.)'
+
+        return toppings
+
+
+
 class Berry(models.Model):
     title = models.CharField(
         'Название',
@@ -99,6 +109,14 @@ class Berry(models.Model):
 
     def __str__(self):
         return f'{self.title}, {self.price} р.'
+
+    def get_berry():
+        base = Berry.objects.all()
+        berrys = {}
+        for record in base:
+            berrys[record.id] = f'{record.title} (+ {record.price} р.)'
+
+        return berrys
 
 
 class Decor(models.Model):
@@ -119,6 +137,16 @@ class Decor(models.Model):
     def __str__(self):
         return f'{self.title}, {self.price} р.'
 
+
+    def get_decor():
+        base = Decor.objects.all()
+        decors = {}
+        for record in base:
+            decors[record.id] = f'{record.title} (+ {record.price} р.)'
+
+        return decors
+
+
 class CakeLevel(models.Model):
     title = models.CharField(
         'Название',
@@ -138,6 +166,15 @@ class CakeLevel(models.Model):
         return f'{self.title}, {self.price} р.'
 
 
+    def get_cake_level():
+        base = Decor.objects.all()
+        cake_levels = {}
+        for record in base:
+            cake_levels[record.id] = f'{record.title} (+ {record.price} р.)'
+
+        return cake_levels
+
+
 class CakeForm(models.Model):
     title = models.CharField(
         'Название',
@@ -155,3 +192,12 @@ class CakeForm(models.Model):
 
     def __str__(self):
         return f'{self.title}, {self.price} р.'
+
+
+    def get_cake_form():
+        base = Decor.objects.all()
+        cake_form = {}
+        for record in base:
+            cake_form[record.id] = f'{record.title} (+ {record.price} р.)'
+
+        return cake_form
