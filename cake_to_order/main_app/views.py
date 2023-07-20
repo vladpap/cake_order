@@ -11,5 +11,6 @@ def index(request):
         f'<p>Формы {CakeForm.get_cake_form()}</p>'\
         f'<p>Топпинги: {Topping.get_topping()}</p>'\
         f'<p>Ягоды: {Berry.get_berry()}</p>'\
-        f'<p>Декор {Decor.get_decor()}</p>'
+        f'<p>Декор {Decor.get_decor()}</p>'\
+        f'<p>Торты: {Cake.get_cakes()}</p>'
         )

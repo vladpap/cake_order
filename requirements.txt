@@ -3,3 +3,5 @@ Django==4.2
 phonenumbers==8.13
 django-phonenumber-field==7.1
 environs==9.5
+torchvision==0.15.2
+more_itertools==9.1.0

@@ -2,6 +2,13 @@ from django.db import models
 from django.contrib.auth.models import User
 from phonenumber_field.modelfields import PhoneNumberField
 
+from PIL import Image, ImageDraw, ImageFont
+
+from torchvision.transforms import PILToTensor, ToPILImage
+from torchvision.utils import make_grid
+
+from more_itertools import chunked
+
 
 # Create your models here.
 class Client(models.Model):
@@ -61,6 +68,43 @@ class Cake(models.Model):
 
     def __str__(self):
         return f'{self.title}, {self.weight} кг., {self.price} р.'
+
+
+    def chunked_queryset(queryset, chunk_size):
+        """ Slice a queryset into chunks. """
+
+        start_pk = 0
+        queryset = queryset.order_by('pk')
+
+        while True:
+            # No entry left
+            if not queryset.filter(pk__gt=start_pk).exists():
+                break
+
+            try:
+                # Fetch chunk_size entries if possible
+                end_pk = queryset.filter(pk__gt=start_pk).values_list(
+                    'pk', flat=True)[chunk_size - 1]
+
+                # Fetch rest entries if less than chunk_size left
+            except IndexError:
+                end_pk = queryset.values_list('pk', flat=True).last()
+
+            yield queryset.filter(pk__gt=start_pk).filter(pk__lte=end_pk)
+
+            start_pk = end_pk
+
+
+    def get_cakes():
+        cakes = []
+        base = Cake.objects.all()
+        # print(base)
+        Cake.chunked_queryset(base, 6)
+        # print(base)
+        for record in base:
+            cakes.append(record.title)
+
+        return list(chunked(cakes, 6))
 
 
 class Topping(models.Model):
