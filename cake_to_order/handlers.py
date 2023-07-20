@@ -1,9 +1,11 @@
 from cake_to_order.settings import TG_BOT_TOKEN
-from keyboards import (main_page_keyboard, skip_button)
+from keyboards import (main_page_keyboard, skip_button, skip_keyboard,
+                       without_inscription_keyboard, time_selecting_keyboard,
+                       go_home_keyboard)
 from texts import TEXTS
 
 import os
-from datetime import datetime
+from datetime import date, timedelta
 from aiogram import Bot, Router
 from aiogram.types import (Message, KeyboardButton, InlineKeyboardButton,
                            InlineKeyboardMarkup, CallbackQuery,
@@ -31,13 +33,19 @@ router = Router()
 
 
 class FSM(StatesGroup):
-    custom_cake_state = State()
-    level_choosing_state = State()
+    # start_page_state = State()
+    # custom_cake_state = State()
+    # level_choosing_state = State()
     shape_choosing_state = State()
     topping_choosing_state = State()
     berries_choosing_state = State()
     decor_choosing_state = State()
     add_inscription_state = State()
+    add_comment_state = State()
+    input_address_state = State()
+    input_date_state = State()
+    input_time_state = State()
+    show_order_state = State()
 
 
 cake_pic = FSInputFile('pictures/Tort.png')
@@ -46,6 +54,8 @@ cake_shape = FSInputFile('pictures/figure.png')
 toppings_photo = FSInputFile('pictures/topping.png')
 berries_photo = FSInputFile('pictures/berries.png')
 decor_photo = FSInputFile('pictures/decor.png')
+inscription_photo = FSInputFile('pictures/Text.png')
+ready_cakes_photo = FSInputFile('pictures/all.png')
 
 
 levels = {1: '1 уровень (+400 р.)',
@@ -70,11 +80,21 @@ decors = {1: 'Фисташки (+300 р.)',
           4: 'Пекан (+300 р.)',
           5: 'Маршмеллоу (+200 р.)',
           6: 'Марципан (+280 р.)', }
+ready_cakes = {1: 'Торт 1',
+               2: 'Торт 2',
+               3: 'Торт 3',
+               4: 'Торт 4',
+               5: 'Торт 5',
+               6: 'Торт 6',
+               7: 'Торт 7',
+               8: 'Торт 8', }
 
 
 @router.message(CommandStart())
 @router.message(Text(text='Вернуться в начало'))
 async def process_start_command(message: Message, state: FSMContext):
+    await state.clear()
+    # state.set_state(default_state)
     await bot.send_photo(chat_id=message.chat.id, photo=cake_pic,
                          caption=TEXTS['greeting'],
                          reply_markup=main_page_keyboard)
@@ -87,7 +107,7 @@ async def process_custom_your_cake_button(message: Message, state: FSMContext):
     kb_builder.row(*buttons, width=1)
     await bot.send_photo(chat_id=message.chat.id, photo=cake_levels,
                          caption='Сколько уровней будет?',
-                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+                         reply_markup=kb_builder.as_markup())
     await state.set_state(FSM.shape_choosing_state)
 
 
@@ -99,7 +119,7 @@ async def process_level_choosing(callback: CallbackQuery, state: FSMContext):
     kb_builder.row(*buttons, width=1)
     await bot.send_photo(chat_id=callback.from_user.id, photo=cake_shape,
                          caption='Какой формы будет Ваш торт?',
-                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+                         reply_markup=kb_builder.as_markup())
     await state.set_state(FSM.topping_choosing_state)
 
 
@@ -113,7 +133,7 @@ async def process_shape_choosing(callback: CallbackQuery, state: FSMContext):
     kb_builder.row(skip_button)
     await bot.send_photo(chat_id=callback.from_user.id, photo=toppings_photo,
                          caption='Выбрать топинг',
-                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+                         reply_markup=kb_builder.as_markup())
     await state.set_state(FSM.berries_choosing_state)
 
 
@@ -127,7 +147,7 @@ async def process_toping_choosing(callback: CallbackQuery, state: FSMContext):
     kb_builder.row(skip_button)
     await bot.send_photo(chat_id=callback.from_user.id, photo=berries_photo,
                          caption='Добавить ягод',
-                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+                         reply_markup=kb_builder.as_markup())
     await state.set_state(FSM.decor_choosing_state)
 
 
@@ -141,7 +161,7 @@ async def process_berry_choosing(callback: CallbackQuery, state: FSMContext):
     kb_builder.row(skip_button)
     await bot.send_photo(chat_id=callback.from_user.id, photo=decor_photo,
                          caption='Выбрать декор',
-                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
+                         reply_markup=kb_builder.as_markup())
     await state.set_state(FSM.add_inscription_state)
 
 
@@ -149,14 +169,94 @@ async def process_berry_choosing(callback: CallbackQuery, state: FSMContext):
 async def process_decor_choosing(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.update_data(decor_id=callback.data)
-    kb_builder = InlineKeyboardBuilder()
-    buttons = [InlineKeyboardButton(text=decors[decor], callback_data=decor) for decor in decors]
-    kb_builder.row(*buttons, width=1)
-    kb_builder.row(skip_button)
-    await bot.send_photo(chat_id=callback.from_user.id, photo=berries_photo,
+    await bot.send_photo(chat_id=callback.from_user.id, photo=inscription_photo,
                          caption='Мы можем разместить на торте любую надпись\nОтправьте сообщение с надписью',
-                         reply_markup=kb_builder.as_markup(resize_keyboard=True))
-    # await state.set_state(FSM.add_inscription_state)
+                         reply_markup=without_inscription_keyboard)
+    await state.set_state(FSM.add_comment_state)
+
+
+@router.callback_query(StateFilter(FSM.add_comment_state))
+async def process_without_inscription_button(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.update_data(inscription=callback.data)
+    await bot.send_message(chat_id=callback.from_user.id,
+                           text='Добавьте комментарий к заказу',
+                           reply_markup=skip_keyboard)
+    await state.set_state(FSM.input_address_state)
+
+
+@router.message(StateFilter(FSM.add_comment_state))
+async def process_inscription_input(message: Message, state: FSMContext):
+    await state.update_data(inscription=message.text)
+    await message.answer(text='Добавьте комментарий к заказу',
+                         reply_markup=skip_keyboard)
+    await state.set_state(FSM.input_address_state)
+
+
+@router.callback_query(StateFilter(FSM.input_address_state))
+async def process_without_comment_button(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.update_data(comment=callback.data)
+    await bot.send_message(chat_id=callback.from_user.id,
+                           text='Введите адрес доставки')
+    await state.set_state(FSM.input_date_state)
+
+
+@router.message(StateFilter(FSM.input_address_state))
+async def process_comment_input(message: Message, state: FSMContext):
+    await state.update_data(comment=message.text)
+    await message.answer(text='Введите адрес доставки')
+    await state.set_state(FSM.input_date_state)
+
+
+@router.message(StateFilter(FSM.input_date_state))
+async def process_address_input(message: Message, state: FSMContext):
+    await state.update_data(address=message.text)
+
+    day = date.today()
+    dates = []
+    for _ in range(8):
+        day += timedelta(days=1)
+        dates.append(day)
+    dates = [f'{date.day}.{str(date.month).zfill(2)}' for date in dates]
+
+    kb_builder = InlineKeyboardBuilder()
+    buttons = [InlineKeyboardButton(text=date, callback_data=date) for date in dates]
+    kb_builder.row(*buttons, width=4)
+    await message.answer(text='Выберите дату доставки',
+                         reply_markup=kb_builder.as_markup())
+    await state.set_state(FSM.input_time_state)
+
+
+@router.callback_query(StateFilter(FSM.input_time_state))
+async def process_date_input(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(date=callback.data)
+    await bot.send_message(chat_id=callback.from_user.id,
+                           text='Выберите время',
+                           reply_markup=time_selecting_keyboard)
+    await state.set_state(FSM.show_order_state)
+
+
+@router.callback_query(StateFilter(FSM.show_order_state))
+async def process_time_input(callback: CallbackQuery, state: FSMContext):
+    await state.update_data(time=callback.data)
+    cake = await state.get_data()
+    await state.clear()
+    await bot.send_message(chat_id=callback.from_user.id,
+                           text=f'Ваш заказ:\n{cake}',
+                           reply_markup=go_home_keyboard)
+    await state.set_state(default_state)
+
+
+@router.message(Text(text='Выбрать из каталога'))
+async def process_select_ready_button(message: Message, state: FSMContext):
+    kb_builder = InlineKeyboardBuilder()
+    buttons = [InlineKeyboardButton(text=cake, callback_data=cake) for cake in ready_cakes]
+    kb_builder.row(*buttons, width=3)
+    await bot.send_photo(chat_id=message.chat.id, photo=ready_cakes_photo,
+                         caption='Выберите ваш любимый торт',
+                         reply_markup=kb_builder.as_markup())
+    # await state.set_state(FSM.shape_choosing_state)
 
 
 # cake = await state.get_data()
