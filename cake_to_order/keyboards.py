@@ -15,6 +15,9 @@ back_to_cake_choosing_button = InlineKeyboardButton(text='Назад к выбо
 go_home_inline_button = InlineKeyboardButton(text='Вернуться в начало', callback_data='Вернуться в начало')
 confirm_order_button = InlineKeyboardButton(text='Подтвердить заказ', callback_data='Подтвердить заказ')
 improve_cake_button = InlineKeyboardButton(text='"Прокачать" торт', callback_data='"Прокачать" торт')
+forward_button = InlineKeyboardButton(text='>>', callback_data='>>')
+backward_button = InlineKeyboardButton(text='<<', callback_data='<<')
+page_button = InlineKeyboardButton(text='/', callback_data='page_number')
 
 
 main_page_keyboard = ReplyKeyboardMarkup(keyboard=[[custom_your_cake_button], [choose_from_catalog_button], [about_us_button]], resize_keyboard=True, one_time_keyboard=True)
