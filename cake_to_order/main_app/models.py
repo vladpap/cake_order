@@ -9,6 +9,9 @@ from torchvision.utils import make_grid
 
 from more_itertools import chunked
 
+import base64
+import io
+
 
 # Create your models here.
 class Client(models.Model):
@@ -70,41 +73,40 @@ class Cake(models.Model):
         return f'{self.title}, {self.weight} кг., {self.price} р.'
 
 
-    def chunked_queryset(queryset, chunk_size):
-        """ Slice a queryset into chunks. """
-
-        start_pk = 0
-        queryset = queryset.order_by('pk')
-
-        while True:
-            # No entry left
-            if not queryset.filter(pk__gt=start_pk).exists():
-                break
-
-            try:
-                # Fetch chunk_size entries if possible
-                end_pk = queryset.filter(pk__gt=start_pk).values_list(
-                    'pk', flat=True)[chunk_size - 1]
-
-                # Fetch rest entries if less than chunk_size left
-            except IndexError:
-                end_pk = queryset.values_list('pk', flat=True).last()
-
-            yield queryset.filter(pk__gt=start_pk).filter(pk__lte=end_pk)
-
-            start_pk = end_pk
-
-
     def get_cakes():
         cakes = []
         base = Cake.objects.all()
-        # print(base)
-        Cake.chunked_queryset(base, 6)
-        # print(base)
-        for record in base:
-            cakes.append(record.title)
+        base_chunk = chunked(base, 6)
+        for record_page in base_chunk:
+            image_ids = []
+            imgs = []
+            for record in record_page:
+                image = Image.open(record.image)
+                ImageDraw.Draw(image). \
+                    rectangle((0, 0, 100, 60), fill='white')
 
-        return list(chunked(cakes, 6))
+                ImageDraw.Draw(image).text(
+                    (10, 10),  # Coordinates
+                    str(record.id),  # Text
+                    (0, 0, 0),  # Color
+                    font=ImageFont.truetype(font='Helvetica', size=50))
+                image_ids.append(record.id)
+                imgs.append(image)
+
+            grid = make_grid([PILToTensor()(img) for img in imgs],
+                nrow=3,
+                padding=25,
+                pad_value=255)
+
+            image_buf = ToPILImage()(grid)
+            buffer = io.BytesIO()
+            image_buf.save(buffer, format='png')
+            img_str = base64.b64encode(buffer.getvalue()).decode('utf8')
+
+            cakes.append({'img': img_str,
+                           'id': image_ids})
+
+        return cakes
 
 
 class Topping(models.Model):
