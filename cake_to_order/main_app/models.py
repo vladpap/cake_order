@@ -142,8 +142,7 @@ class Topping(models.Model):
         base = Topping.objects.all()
         toppings = {}
         for record in base:
-            toppings[record.id] = f'<b>{record.title}</b> '\
-            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
+            toppings[record.id] = f'{record.title} (+ {int(record.price)} р.)'
 
         return toppings
 
@@ -171,8 +170,7 @@ class Berry(models.Model):
         base = Berry.objects.all()
         berrys = {}
         for record in base:
-            berrys[record.id] = f'<b>{record.title}</b> '\
-            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
+            berrys[record.id] = f'{record.title} (+ {int(record.price)} р.)'
 
         return berrys
 
@@ -200,8 +198,7 @@ class Decor(models.Model):
         base = Decor.objects.all()
         decors = {}
         for record in base:
-            decors[record.id] = f'<b>{record.title}</b> '\
-            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
+            decors[record.id] = f'{record.title} (+ {int(record.price)} р.)'
 
         return decors
 
@@ -229,8 +226,7 @@ class CakeLevel(models.Model):
         base = CakeLevel.objects.all()
         cake_levels = {}
         for record in base:
-            cake_levels[record.id] = f'<b>{record.title}</b> '\
-            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
+            cake_levels[record.id] = f'{record.title} (+ {int(record.price)} р.)'
 
         return cake_levels
 
@@ -258,7 +254,6 @@ class CakeForm(models.Model):
         base = CakeForm.objects.all()
         cake_form = {}
         for record in base:
-            cake_form[record.id] = f'<b>{record.title}</b> '\
-            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
+            cake_form[record.id] = f'{record.title} (+ {int(record.price)} р.)'
 
         return cake_form
