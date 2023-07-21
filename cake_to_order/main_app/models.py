@@ -98,12 +98,12 @@ class Cake(models.Model):
                 padding=25,
                 pad_value=255)
 
-            image_buf = ToPILImage()(grid)
-            buffer = io.BytesIO()
-            image_buf.save(buffer, format='png')
+            # image_buf = ToPILImage()(grid)
+            # buffer = io.BytesIO()
+            # image_buf.save(buffer, format='png')
             # img_str = base64.b64encode(buffer.getvalue()).decode('utf8')
 
-            cakes.append({'img': buffer.getvalue(),
+            cakes.append({'img': ToPILImage()(grid),
                            'id': image_ids})
 
         return cakes
