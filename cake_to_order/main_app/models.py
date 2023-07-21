@@ -109,6 +109,16 @@ class Cake(models.Model):
         return cakes
 
 
+    def get_cake(id):
+        cake = Cake.objects.get(id=id)
+        img = cake.image
+        description = f'<h3>{cake.title}</h3>' \
+            f'<p>{cake.description}</p></br>' \
+            f'<h3>{cake.price} ₽ / {cake.weight} кг.</h3>'
+        return {'img': img,
+                'text': description}
+
+
 class Topping(models.Model):
     title = models.CharField(
         'Название',
@@ -132,7 +142,8 @@ class Topping(models.Model):
         base = Topping.objects.all()
         toppings = {}
         for record in base:
-            toppings[record.id] = f'{record.title} (+ {record.price} р.)'
+            toppings[record.id] = f'<b>{record.title}</b> '\
+            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
 
         return toppings
 
@@ -160,7 +171,8 @@ class Berry(models.Model):
         base = Berry.objects.all()
         berrys = {}
         for record in base:
-            berrys[record.id] = f'{record.title} (+ {record.price} р.)'
+            berrys[record.id] = f'<b>{record.title}</b> '\
+            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
 
         return berrys
 
@@ -188,7 +200,8 @@ class Decor(models.Model):
         base = Decor.objects.all()
         decors = {}
         for record in base:
-            decors[record.id] = f'{record.title} (+ {record.price} р.)'
+            decors[record.id] = f'<b>{record.title}</b> '\
+            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
 
         return decors
 
@@ -213,10 +226,11 @@ class CakeLevel(models.Model):
 
 
     def get_cake_level():
-        base = Decor.objects.all()
+        base = CakeLevel.objects.all()
         cake_levels = {}
         for record in base:
-            cake_levels[record.id] = f'{record.title} (+ {record.price} р.)'
+            cake_levels[record.id] = f'<b>{record.title}</b> '\
+            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
 
         return cake_levels
 
@@ -241,9 +255,10 @@ class CakeForm(models.Model):
 
 
     def get_cake_form():
-        base = Decor.objects.all()
+        base = CakeForm.objects.all()
         cake_form = {}
         for record in base:
-            cake_form[record.id] = f'{record.title} (+ {record.price} р.)'
+            cake_form[record.id] = f'<b>{record.title}</b> '\
+            f'<span style="color:#6495ED">(+ {int(record.price)} р.)</span>'
 
         return cake_form
