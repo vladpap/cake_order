@@ -15,7 +15,7 @@ async def set_main_menu(bot: Bot):
 
 
 async def main():
-    bot = Bot(TG_BOT_TOKEN)
+    bot = Bot(TG_BOT_TOKEN, parse_mode='HTML')
     dp = Dispatcher(storage=storage)
     dp.include_router(handlers.router)
     dp.startup.register(set_main_menu)

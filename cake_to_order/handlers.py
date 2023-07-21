@@ -11,6 +11,7 @@ from datetime import date, timedelta
 from aiogram import Bot, Router
 from aiogram.types import (Message, InlineKeyboardButton, CallbackQuery,
                            FSInputFile, InputMediaPhoto)
+from aiogram.types.input_file import BufferedInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import CommandStart, Text, StateFilter
 from aiogram.filters.state import State, StatesGroup
@@ -26,10 +27,10 @@ from django.conf import settings
 if not settings.configured:
     django.setup()
 
-from main_app.models import Cake
+from main_app.models import Client, Cake, Topping, Berry, Decor, CakeLevel, CakeForm
 
 
-bot = Bot(TG_BOT_TOKEN)
+bot = Bot(TG_BOT_TOKEN, parse_mode='HTML')
 router = Router()
 
 
@@ -73,35 +74,7 @@ levels = {1: '1 уровень (+400 р.)',
 shapes = {1: '🟡 Круг (+400 р.)',
           2: '🟨 Квадрат (+600 р.)',
           3: '🟨🟨 Прямоугольник (+1 000 р.)', }
-toppings = {1: 'Белый соус (+200 р.)',
-            2: 'Карамельный сироп (+180 р.)',
-            3: 'Кленовый сироп (+200 р.)',
-            4: 'Клубничный сироп (+300 р.)',
-            5: 'Черничный сироп (+350 р.)',
-            6: 'Молочный шоколад (+200 р.)', }
-berries = {1: 'Ежевика (+400 р.)',
-           2: 'Малина (+300 р.)',
-           3: '🫐 Голубика (+450 р.)',
-           4: '🍓 Клубника (+500 р.)', }
-decors = {1: 'Фисташки (+300 р.)',
-          2: 'Безе (+400 р.)',
-          3: 'Фундук (+350 р.)',
-          4: 'Пекан (+300 р.)',
-          5: 'Маршмеллоу (+200 р.)',
-          6: 'Марципан (+280 р.)', }
 
-ready_cakes = [
-    {'img': ready_cakes_photo,
-     'ids': [1, 2, 3, 4, 5, 6, 7, 8], },
-    {'img': ready_cakes_photo_2,
-     'ids': [1, 2, 3, 4, 5, 6], },
-    {'img': ready_cakes_photo_3,
-     'ids': [1, 2, 3], },
-    {'img': ready_cakes_photo_4,
-     'ids': [1, 2, 3, 4, 5, 6, 7, 8], },
-    {'img': ready_cakes_photo_5,
-     'ids': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], },
-]
 cake = {'img': cheesecake_photo,
         'description': 'Шоколадный чизкейк\nшоколадный чизкейк, украшен шариками криспи\n4960 ₽ / 2,3 кг'}
 
@@ -167,6 +140,7 @@ async def process_shape_choosing(callback: CallbackQuery, state: FSMContext):
         await state.update_data(shape_id='no_data')
     else:
         await state.update_data(shape_id=callback.data)
+    toppings = Topping.get_topping()
     kb_builder = InlineKeyboardBuilder()
     buttons = [InlineKeyboardButton(text=toppings[topping], callback_data=topping) for topping in toppings]
     kb_builder.row(*buttons, width=1)
@@ -182,6 +156,7 @@ async def process_shape_choosing(callback: CallbackQuery, state: FSMContext):
 async def process_toping_choosing(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.update_data(topping_id=callback.data)
+    berries = Berry.get_berry()
     kb_builder = InlineKeyboardBuilder()
     buttons = [InlineKeyboardButton(text=berries[berry], callback_data=berry) for berry in berries]
     kb_builder.row(*buttons, width=1)
@@ -197,6 +172,7 @@ async def process_toping_choosing(callback: CallbackQuery, state: FSMContext):
 async def process_berry_choosing(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.update_data(berry_id=callback.data)
+    decors = Decor.get_decor()
     kb_builder = InlineKeyboardBuilder()
     buttons = [InlineKeyboardButton(text=decors[decor], callback_data=decor) for decor in decors]
     kb_builder.row(*buttons, width=1)
@@ -233,6 +209,7 @@ async def process_inscription_input(message: Message, state: FSMContext):
     await state.update_data(inscription=message.text)
     await message.answer(text='Добавьте комментарий к заказу',
                          reply_markup=skip_keyboard)
+    # TODO: проверить клиента по базе
     await state.set_state(FSM.input_name_state)
 
 
@@ -300,7 +277,7 @@ async def process_date_input(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(StateFilter(FSM.show_order_state))
 async def process_time_input(callback: CallbackQuery, state: FSMContext):
     await state.update_data(time=callback.data)
-    await state.update_data(tg_id=callback.from_user.id)
+    await state.update_data(telegram_id=callback.from_user.id)
     cake_order = await state.get_data()
     await state.clear()
     for key in keys_to_check:
@@ -314,17 +291,17 @@ async def process_time_input(callback: CallbackQuery, state: FSMContext):
 
 @router.message(Text(text='Выбрать из каталога'))
 async def process_select_ready_button(message: Message, state: FSMContext):
-    # cakes = Cake.get_cakes()
-    # print(cakes)
+    ready_cakes = Cake.get_cakes()
     page = 0
+    photo = BufferedInputFile(file=ready_cakes[page]['img'], filename='photo.jpg')
     await state.update_data(page=page)
     page_button.text = f'{page + 1}/{len(ready_cakes)}'
     kb_builder = InlineKeyboardBuilder()
-    buttons = [InlineKeyboardButton(text=cake, callback_data=cake) for cake in ready_cakes[page]['ids']]
+    buttons = [InlineKeyboardButton(text=cake, callback_data=cake) for cake in ready_cakes[page]['id']]
     kb_builder.row(*buttons, width=3)
     kb_builder.row(backward_button, page_button, forward_button, width=3)
     kb_builder.row(go_home_inline_button)
-    await bot.send_photo(chat_id=message.chat.id, photo=ready_cakes[page]['img'],
+    await bot.send_photo(chat_id=message.chat.id, photo=photo,
                          caption='Выберите ваш любимый торт',
                          reply_markup=kb_builder.as_markup())
     await state.set_state(FSM.show_selected_cake_state)
@@ -335,20 +312,22 @@ async def process_forward_button(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     data = await state.get_data()
     page = data['page']
+    ready_cakes = Cake.get_cakes()
     if page < len(ready_cakes) - 1:
         page += 1
     else:
         return
     await state.update_data(page=page)
+    photo = BufferedInputFile(file=ready_cakes[page]['img'], filename='photo.jpg')
     page_button.text = f'{page + 1}/{len(ready_cakes)}'
     kb_builder = InlineKeyboardBuilder()
-    buttons = [InlineKeyboardButton(text=cake, callback_data=cake) for cake in ready_cakes[page]['ids']]
+    buttons = [InlineKeyboardButton(text=cake, callback_data=cake) for cake in ready_cakes[page]['id']]
     kb_builder.row(*buttons, width=3)
     kb_builder.row(backward_button, page_button, forward_button, width=3)
     kb_builder.row(go_home_inline_button)
     await bot.edit_message_media(chat_id=callback.from_user.id,
                                  message_id=callback.message.message_id,
-                                 media=InputMediaPhoto(media=ready_cakes[page]['img']),
+                                 media=InputMediaPhoto(media=photo),
                                  )
     await bot.edit_message_caption(chat_id=callback.from_user.id,
                                    message_id=callback.message.message_id,
@@ -360,21 +339,23 @@ async def process_forward_button(callback: CallbackQuery, state: FSMContext):
 async def process_backward_button(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     data = await state.get_data()
+    ready_cakes = Cake.get_cakes()
     page = data['page']
     if page > 0:
         page -= 1
     else:
         return
     await state.update_data(page=page)
+    photo = BufferedInputFile(file=ready_cakes[page]['img'], filename='photo.jpg')
     page_button.text = f'{page + 1}/{len(ready_cakes)}'
     kb_builder = InlineKeyboardBuilder()
-    buttons = [InlineKeyboardButton(text=cake, callback_data=cake) for cake in ready_cakes[page]['ids']]
+    buttons = [InlineKeyboardButton(text=cake, callback_data=cake) for cake in ready_cakes[page]['id']]
     kb_builder.row(*buttons, width=3)
     kb_builder.row(backward_button, page_button, forward_button, width=3)
     kb_builder.row(go_home_inline_button)
     await bot.edit_message_media(chat_id=callback.from_user.id,
                                  message_id=callback.message.message_id,
-                                 media=InputMediaPhoto(media=ready_cakes[page]['img']),
+                                 media=InputMediaPhoto(media=photo),
                                  )
     await bot.edit_message_caption(chat_id=callback.from_user.id,
                                    message_id=callback.message.message_id,
@@ -383,10 +364,12 @@ async def process_backward_button(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(StateFilter(FSM.show_selected_cake_state),
-                       lambda callback: callback.data in str(ready_cakes[0]['ids']))
+                       ~Text(text='page_number'))
 async def show_selected_cake(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.update_data(cake_id=callback.data)
+    # cake = Cake.get_cake(callback.data)
+    # photo = InputMediaPhoto(media=cake['img'])
     await bot.send_photo(chat_id=callback.from_user.id, photo=cake['img'],
                          caption=cake['description'],
                          reply_markup=cake_menu_keyboard)
