@@ -17,7 +17,7 @@ def index(request):
         f'<p>Топпинги: {Topping.get_topping()}</p>'\
         f'<p>Ягоды: {Berry.get_berry()}</p>'\
         f'<p>Декор {Decor.get_decor()}</p>'\
-        f'<p><img src=data:image/png;base64,{img} width="200"></p>'\
+        f'<p><img {img} width="200"></p>'\
         f'<p>Торты: {ids}</p>'\
         f'<p>{cake["text"]}</p>'
         )

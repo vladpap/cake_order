@@ -101,9 +101,9 @@ class Cake(models.Model):
             image_buf = ToPILImage()(grid)
             buffer = io.BytesIO()
             image_buf.save(buffer, format='png')
-            img_str = base64.b64encode(buffer.getvalue()).decode('utf8')
+            # img_str = base64.b64encode(buffer.getvalue()).decode('utf8')
 
-            cakes.append({'img': img_str,
+            cakes.append({'img': buffer.getvalue(),
                            'id': image_ids})
 
         return cakes
