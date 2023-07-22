@@ -30,7 +30,7 @@ if not settings.configured:
 from main_app.models import Client, Cake, Topping, Berry, Decor, CakeLevel, CakeForm
 
 
-bot = Bot(TG_BOT_TOKEN)
+bot = Bot(TG_BOT_TOKEN, parse_mode='html')
 router = Router()
 
 

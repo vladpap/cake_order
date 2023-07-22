@@ -112,9 +112,9 @@ class Cake(models.Model):
     def get_cake(id):
         cake = Cake.objects.get(id=id)
         img = cake.image
-        description = f'{cake.title}\n' \
+        description = f'<b>{cake.title}</b>\n' \
             f'{cake.description}\n' \
-            f'{cake.price} ₽ / {cake.weight} кг.'
+            f'<b>{cake.price} ₽ / {cake.weight} кг.</b>'
         return {'img': img,
                 'text': description}
 
