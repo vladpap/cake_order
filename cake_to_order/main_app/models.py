@@ -89,7 +89,7 @@ class Cake(models.Model):
                     (10, 10),  # Coordinates
                     str(record.id),  # Text
                     (0, 0, 0),  # Color
-                    font=ImageFont.truetype(font='Helvetica', size=50))  # Helvetica arial.ttf
+                    font=ImageFont.truetype(font='FreeSans.ttf', size=50))  # Helvetica arial.ttf FreeSans.ttf
                 image_ids.append(record.id)
                 imgs.append(image)
 
