@@ -89,7 +89,7 @@ class Cake(models.Model):
                     (10, 10),  # Coordinates
                     str(record.id),  # Text
                     (0, 0, 0),  # Color
-                    font=ImageFont.truetype(font='Helvetica', size=50))
+                    font=ImageFont.truetype(font='arial.ttf', size=50))  # Helvetica arial.ttf
                 image_ids.append(record.id)
                 imgs.append(image)
 
@@ -112,9 +112,9 @@ class Cake(models.Model):
     def get_cake(id):
         cake = Cake.objects.get(id=id)
         img = cake.image
-        description = f'<h3>{cake.title}</h3>' \
-            f'<p>{cake.description}</p></br>' \
-            f'<h3>{cake.price} ₽ / {cake.weight} кг.</h3>'
+        description = f'{cake.title}\n' \
+            f'{cake.description}\n' \
+            f'{cake.price} ₽ / {cake.weight} кг.'
         return {'img': img,
                 'text': description}
 

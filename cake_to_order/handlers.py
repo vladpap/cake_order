@@ -30,7 +30,7 @@ if not settings.configured:
 from main_app.models import Client, Cake, Topping, Berry, Decor, CakeLevel, CakeForm
 
 
-bot = Bot(TG_BOT_TOKEN, parse_mode='HTML')
+bot = Bot(TG_BOT_TOKEN)
 router = Router()
 
 
@@ -58,12 +58,6 @@ toppings_photo = FSInputFile('pictures/topping.png')
 berries_photo = FSInputFile('pictures/berries.png')
 decor_photo = FSInputFile('pictures/decor.png')
 inscription_photo = FSInputFile('pictures/Text.png')
-ready_cakes_photo = FSInputFile('pictures/all.png')
-ready_cakes_photo_2 = FSInputFile('pictures/cakes_photo.jpg')
-ready_cakes_photo_3 = FSInputFile('pictures/cakes_photo_3.jpg')
-ready_cakes_photo_4 = FSInputFile('pictures/cakes_photo_4.jpg')
-ready_cakes_photo_5 = FSInputFile('pictures/cakes_photo_5.jpg')
-cheesecake_photo = FSInputFile('pictures/005.jpeg')
 add_decor_photo = FSInputFile('pictures/add_decor.jpg')
 
 keys_to_check = ('cake_id', 'level_id', 'shape_id', 'topping_id', 'berry_id', 'decor_id')
@@ -74,9 +68,6 @@ levels = {1: '1 уровень (+400 р.)',
 shapes = {1: '🟡 Круг (+400 р.)',
           2: '🟨 Квадрат (+600 р.)',
           3: '🟨🟨 Прямоугольник (+1 000 р.)', }
-
-cake = {'img': cheesecake_photo,
-        'description': 'Шоколадный чизкейк\nшоколадный чизкейк, украшен шариками криспи\n4960 ₽ / 2,3 кг'}
 
 
 @router.message(CommandStart())
@@ -368,14 +359,17 @@ async def process_backward_button(callback: CallbackQuery, state: FSMContext):
 async def show_selected_cake(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.update_data(cake_id=callback.data)
-    # cake = Cake.get_cake(callback.data)
-    # photo = InputMediaPhoto(media=cake['img'])
-    await bot.send_photo(chat_id=callback.from_user.id, photo=cake['img'],
-                         caption=cake['description'],
+    cake = Cake.get_cake(callback.data)
+    image_bytes = cake['img'].read()
+    photo = BufferedInputFile(file=image_bytes, filename='photo.jpg')
+    await bot.send_photo(chat_id=callback.from_user.id, photo=photo,
+                         caption=cake['text'],
                          reply_markup=cake_menu_keyboard)
+    await state.set_state(FSM.cake_menu_state)
 
 
-@router.callback_query(lambda callback: callback.data == 'Заказать')
+@router.callback_query(StateFilter(FSM.cake_menu_state),
+                       lambda callback: callback.data == 'Заказать')
 async def process_order_ready_cake_button(callback: CallbackQuery):
     await callback.answer()
     await bot.send_photo(chat_id=callback.from_user.id, photo=add_decor_photo,
@@ -383,13 +377,15 @@ async def process_order_ready_cake_button(callback: CallbackQuery):
                          reply_markup=cake_improve_keyboard)
 
 
-@router.callback_query(lambda callback: callback.data == '"Прокачать" торт')
+@router.callback_query(StateFilter(FSM.cake_menu_state),
+                       lambda callback: callback.data == '"Прокачать" торт')
 async def process_improve_cake_button(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await process_shape_choosing(callback, state)
 
 
-@router.callback_query(lambda callback: callback.data == 'Подтвердить заказ')
+@router.callback_query(StateFilter(FSM.cake_menu_state),
+                       lambda callback: callback.data == 'Подтвердить заказ')
 async def process_confirm_order_button(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await process_without_inscription_button(callback, state)
