@@ -11,6 +11,7 @@ from more_itertools import chunked
 
 import base64
 import io
+import sys
 
 
 # Create your models here.
@@ -77,6 +78,10 @@ class Cake(models.Model):
         cakes = []
         base = Cake.objects.all()
         base_chunk = chunked(base, 6)
+        if sys.platform == 'linux':
+            font_name = 'arial.ttf'
+        else:
+            font_name = 'Helvetica'
         for record_page in base_chunk:
             image_ids = []
             imgs = []
@@ -89,7 +94,7 @@ class Cake(models.Model):
                     (10, 10),  # Coordinates
                     str(record.id),  # Text
                     (0, 0, 0),  # Color
-                    font=ImageFont.truetype(font='arial.ttf', size=50))  # Helvetica arial.ttf FreeSans.ttf
+                    font=ImageFont.truetype(font=font_name, size=50))  # Helvetica arial.ttf FreeSans.ttf
                 image_ids.append(record.id)
                 imgs.append(image)
 
