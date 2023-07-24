@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from datetime import datetime
 from phonenumber_field.modelfields import PhoneNumberField
 import phonenumbers
 
@@ -338,6 +339,18 @@ class OrderCake(models.Model):
         'Комментарий',
         null=True,
         blank=True)
+    phone = models.CharField(
+        verbose_name='Телефон',
+        null=True,
+        max_length=15)
+    adress = models.CharField(
+        verbose_name='Адрес',
+        max_length=50,
+        null=True,
+        blank=True)
+    create_at = models.DateTimeField(
+        verbose_name='Дата создания',
+        default=timezone.now)
     order_date = models.DateField(
         verbose_name='Доставка',
         default=timezone.now)
@@ -395,8 +408,8 @@ class OrderCake(models.Model):
         berry_value = from_telegram['berry_id']
         decor_value = from_telegram['decor_id']
         time_value = 'PM' if from_telegram['time'] == '15:00 - 19:00' else 'AM'
-        # 'date': '30.07'
-        from datetime import datetime
+        phone_value = from_telegram['phone']
+        adress_value = from_telegram['address']
         date_value = timezone.make_aware(datetime.strptime(
             from_telegram['date']+'.2023',
             '%d.%m.%Y'))
@@ -429,7 +442,9 @@ class OrderCake(models.Model):
             inscription=from_telegram['inscription'],
             comment=from_telegram['comment'],
             order_date=date_value,
-            order_time=time_value
+            order_time=time_value,
+            phone=phone_value,
+            adress=adress_value
             )
         amount = 0;
         amount += order.cake_catalog.price if order.cake_catalog else 0
@@ -453,6 +468,8 @@ class OrderCake(models.Model):
                f'Надпись: <b>{order.inscription if order.inscription else "-"}</b>\n'\
                f'Коментарий: <b>{order.comment if order.comment else "-"}</b>\n'\
                f'Доставка: <b>{order.order_date.strftime("%d.%m")}, {order.order_time}</b>\n'\
+               f'По адресу: <b>{order.adress}</b>\n'\
+               f'Контактный телефон: <b>{order.phone}</b>\n'\
                f'На сумму: <b>{amount} ₽</b>'
 
 

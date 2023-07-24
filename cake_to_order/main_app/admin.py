@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils import timezone
+from datetime import datetime
 from .models import Client, Cake, Topping, Berry, Decor, CakeLevel, CakeForm, OrderCake
 
 
@@ -16,14 +18,17 @@ admin.site.register(CakeForm)
 class OrderCakeAdmin(admin.ModelAdmin):
     list_display = [
         'get_client_full_name',
+        'get_create_at',
         'get_cake',
-        'topping',
-        'berry',
-        'decor',
+        'get_topping',
+        'get_berry',
+        'get_decor',
         'inscription',
         'comment',
-        'order_date',
-        'order_time',
+        'get_order_date',
+        'get_order_time',
+        'phone',
+        'adress',
         'get_amount',
         ]
     # list_filter = ['is_speaker',]
@@ -32,11 +37,34 @@ class OrderCakeAdmin(admin.ModelAdmin):
     #                  'user__last_name',
     #                  'phone')
 
+    def get_topping(self, obj):
+        return obj.topping.title if obj.topping else '-'
+
+    get_topping.short_description = 'Топпинг'
+
+
+    def get_berry(self, obj):
+        return obj.berry.title if obj.berry else '-'
+
+    get_berry.short_description = 'Ягоды'
+
+
+    def get_decor(self, obj):
+        return obj.decor.title if obj.decor else '-'
+
+    get_decor.short_description = 'Декор'
+
+
+    def get_create_at(self, obj):
+        return obj.create_at.strftime('%d.%m.%y %H:%M')
+
+    get_create_at.short_description = 'Заказано'
+
 
     def get_client_full_name(self, obj):
         return f'{obj.client.user.first_name} {obj.client.user.last_name}'
 
-    get_client_full_name.short_description = 'Пользователь'
+    get_client_full_name.short_description = 'Клиент'
 
 
     def get_cake(self, obj):
@@ -48,6 +76,19 @@ class OrderCakeAdmin(admin.ModelAdmin):
         return cake_str
 
     get_cake.short_description = 'Торт'
+
+
+    def get_order_date(self, obj):
+        return obj.order_date.strftime('%d.%m')
+
+    get_order_date.short_description = 'Доставка'
+
+
+    def get_order_time(self, obj):
+        return obj.order_time
+
+    get_order_time.short_description = 'Время'
+
 
     def get_amount(self, obj):
         amount = 0
