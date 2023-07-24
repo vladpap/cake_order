@@ -27,7 +27,8 @@ from django.conf import settings
 if not settings.configured:
     django.setup()
 
-from main_app.models import Client, Cake, Topping, Berry, Decor, CakeLevel, CakeForm
+from main_app.models import (Client, Cake, Topping, Berry, Decor, CakeLevel,
+                             CakeForm, OrderCake)
 
 
 bot = Bot(TG_BOT_TOKEN, parse_mode='html')
@@ -101,6 +102,7 @@ async def process_about_us_button(message: Message, state: FSMContext):
 
 @router.message(Text(text='Собрать свой авторский торт'))
 async def process_custom_your_cake_button(message: Message, state: FSMContext):
+    levels = CakeLevel.get_cake_level()
     kb_builder = InlineKeyboardBuilder()
     buttons = [InlineKeyboardButton(text=levels[level], callback_data=level) for level in levels]
     kb_builder.row(*buttons, width=1)
@@ -114,6 +116,7 @@ async def process_custom_your_cake_button(message: Message, state: FSMContext):
 @router.callback_query(StateFilter(FSM.shape_choosing_state))
 async def process_level_choosing(callback: CallbackQuery, state: FSMContext):
     await state.update_data(level_id=callback.data)
+    shapes = CakeForm.get_cake_form()
     kb_builder = InlineKeyboardBuilder()
     buttons = [InlineKeyboardButton(text=shapes[shape], callback_data=shape) for shape in shapes]
     kb_builder.row(*buttons, width=1)
@@ -274,8 +277,9 @@ async def process_time_input(callback: CallbackQuery, state: FSMContext):
     for key in keys_to_check:
         if key not in cake_order:
             cake_order[key] = 'no_data'
+    order = OrderCake.save_order(cake_order)
     await bot.send_message(chat_id=callback.from_user.id,
-                           text=f'Ваш заказ:\n{cake_order}',
+                           text=order,
                            reply_markup=go_home_keyboard)
     await state.set_state(default_state)
 
