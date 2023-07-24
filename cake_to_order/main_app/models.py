@@ -331,10 +331,12 @@ class OrderCake(models.Model):
         blank=True)
     inscription = models.CharField(
         'Надпись',
+        null=True,
         max_length=200,
         blank=True)
     comment = models.TextField(
         'Комментарий',
+        null=True,
         blank=True)
     order_date = models.DateField(
         verbose_name='Доставка',
@@ -373,6 +375,7 @@ class OrderCake(models.Model):
             first()
         if not client:
             user = User.objects.create(
+                username=f'{first_name} {last_name}',
                 first_name=first_name,
                 last_name=last_name)
 
